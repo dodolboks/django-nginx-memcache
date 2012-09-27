@@ -19,7 +19,7 @@ class UpdateCacheMiddleware(object):
     to be called last during the response phase.
     """
 
-    def __init__(self, cache_timeout, page_version_fn, anonymous_only):
+    def __init__(self, cache_timeout, anonymous_only):
         """Initialize middleware. Args:
             * cache_timeout - seconds after which the cached response expires
             * page_version_fn - return a value to version the view based on
@@ -27,7 +27,7 @@ class UpdateCacheMiddleware(object):
             * anonymous_only - only cache if the user is anonymous
         """
         self.cache_timeout = cache_timeout
-        self.page_version_fn = page_version_fn
+        #self.page_version_fn = page_version_fn
         self.anonymous_only = anonymous_only
 
     def process_response(self, request, response):
@@ -40,6 +40,6 @@ class UpdateCacheMiddleware(object):
         # Logged in users don't cause caching if anonymous_only is set.
         if self.anonymous_only and request.user.is_authenticated():
             return response
-        cache_response(request, response, cache_timeout=self.cache_timeout,
-            page_version_fn=self.page_version_fn)
+
+        cache_response(request, response, cache_timeout=self.cache_timeout)
         return response

@@ -11,39 +11,29 @@ nginx_cache = get_cache(CACHE_ALIAS)
 
 
 def cache_response(request, response,
-                    cache_timeout=CACHE_TIME,
-                    cookie_name=CACHE_NGINX_DEFAULT_COOKIE,
-                    page_version_fn=None):
+                    cache_timeout=CACHE_TIME):
     """Cache this response for the web server to grab next time."""
-    # get page version
-    if page_version_fn:
-        pv = page_version_fn(request)
+    if request.is_mobile:
+       nama_key = '%s&mobile' % request.get_full_path()
     else:
-        pv = ''
-    cache_key = get_cache_key(request.get_full_path(), page_version=pv,
-                            cookie_name=cookie_name)
+       nama_key = '%s&desktop' % request.get_full_path()
+
+    cache_key = get_cache_key(nama_key)
     nginx_cache.set(cache_key, response._get_content(), cache_timeout)
-    # Store the version, if any specified.
-    if pv:
-        response.set_cookie(cookie_name, pv)
 
 
-def get_cache_key(request_path, page_version='',
-        cookie_name=CACHE_NGINX_DEFAULT_COOKIE):
+def get_cache_key(request_path):
     """Use the request path and page version to get cache key."""
-    raw_key = u'%s&%s=%s' % (request_path, cookie_name, page_version)
+    raw_key = u'%s' % (request_path)
     return hashlib.md5(raw_key).hexdigest()
 
 
-def invalidate_from_request(request, page_version='',
-        cookie_name=CACHE_NGINX_DEFAULT_COOKIE):
+def invalidate_from_request(request):
     """Delete cache key for this request and page version."""
-    invalidate(request.get_full_path(), page_version, cookie_name=cookie_name)
+    invalidate(request.get_full_path())
 
 
-def invalidate(request_path, page_version='',
-        cookie_name=CACHE_NGINX_DEFAULT_COOKIE):
+def invalidate(request_path):
     """Delete cache key for this request path and page version."""
-    cache_key = get_cache_key(request_path, page_version,
-                                cookie_name=cookie_name)
+    cache_key = get_cache_key(request_path)
     nginx_cache.delete(cache_key)
